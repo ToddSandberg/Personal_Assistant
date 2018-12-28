@@ -17,9 +17,13 @@ import com.google.cloud.texttospeech.v1.VoiceSelectionParams;
 import com.google.protobuf.ByteString;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Scanner;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -44,6 +48,14 @@ public class Chatbot {
 	static String bot_name = "Kara";
 	//Name of the user
 	static String user_name = "Todd";
+	static boolean started = false;
+	static String log = "";
+	static String date= "";
+	static int day = -1;
+	static boolean firstStartup = false;
+	static Calendar cal = Calendar.getInstance();
+	static boolean bedtime = false;
+	static boolean logging = false;
 	public static void main(String [] args) {
 		try {
 			//playString("Hello "+user_name+", how are you this morning!");
@@ -71,8 +83,14 @@ public class Chatbot {
 	        	  String result = response.getResults(0).getAlternatives(0).getTranscript().trim();
 	        	  System.out.println(result);
 	        	  if(result.equals("hey "+bot_name) || result.equals("hello")) {
+	        		  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy.MM.dd");  
+	        		  LocalDateTime now = LocalDateTime.now();
+	        		  date = dtf.format(now);
+	        		  if(day!=now.getDayOfYear()) {
+	        			  firstStartup = true;
+	        			  day = now.getDayOfYear();
+	        		  }
 	        		  String greeting;
-	        		  Calendar cal = Calendar.getInstance();
 	      	        	SimpleDateFormat sdf = new SimpleDateFormat("HH");
 	      	        	String hourstring = sdf.format(cal.getTime());
 	      	        	int hour = Integer.parseInt(hourstring);
@@ -86,10 +104,89 @@ public class Chatbot {
 	      	        		greeting = "evening";
 	      	        	}
 	        		  //playString("Hello "+user_name+", how are you this morning!");
-	        		  playString("Good "+greeting+" "+user_name+", how are you?");
+	      	        	if (firstStartup) {
+	      	        		//TODO weather
+	      	        		//TODO news debrief?
+	      	        		//TODO get calendar
+	      	        		playString("Good "+greeting+" "+user_name+"! What do you need?");
+	      	        	}
+	      	        	else {
+	      	        		playString("Good "+greeting+" "+user_name+"! What do you need?");
+	      	        	}
+	        		  started =true;
 	        	  }
-	        	  else if(result.equals("good")) {
-	        		  playString("that's good");
+	        	  else if(bedtime && (result.equals("yes") || result.equals("yep") || result.equals("yup"))) {
+	        		  //TODO set an alarm
+	        		  playString("Great! Good night "+user_name+"!");
+	        		  started=false;
+	        		  bedtime=false;
+	        	  }
+	        	  else if(bedtime && (result.equals("no") || result.equals("nope"))) {
+	        		  playString("Ah sleeping in I see. Well good night "+user_name+"!");
+	        		  started=false;
+	        		  bedtime=false;
+	        	  }
+	        	  else if(logging && (result.endsWith("thats it") || result.endsWith("that's it"))) {
+	        		  playString("Thanks for telling me. Saving to log now.");
+	        		  log += result;
+	        		  try {
+	        			  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy.MM.dd");  
+		        		  LocalDateTime now = LocalDateTime.now();
+		        		  File f = new File(dtf.format(now)+".txt");
+	        			  PrintWriter pw = new PrintWriter(f);
+	        			  pw.write(log);
+	        			  log = "";
+	        			  pw.close();
+	        			  logging = false;
+	        			  playString("All set.");
+	        		  }catch(Exception e) {
+	        			  e.printStackTrace();
+	        			  logging = false;
+	        			  playString("Something went wrong I'm sorry.");
+	        		  }
+	        	  }
+	        	  else if(logging) {
+	        		  log += result+"\n";
+	        	  }
+	        	  else if(started && result.equals("play today's log")) {
+	        		  try {
+		        		  File f = new File(date+".txt");
+		        		  if(f.exists() && !f.isDirectory()) { 
+		        			  String s = "Sure thing!";
+			        		  Scanner scan = new Scanner(f);
+			        		  while(scan.hasNextLine()) {
+			        			  s+=". "+scan.nextLine();
+			        		  }
+			        		  scan.close();
+			        		  playString(s);
+		        		  }
+	        		  }catch(Exception e) {
+	        			  e.printStackTrace();
+	        			  playString("Something went wrong I'm sorry.");
+	        		  }
+	        	  }
+	        	  else if(started && (result.equals("take a log") || result.equals("start log"))) {
+	        		  logging = true;
+	        		  playString("Talk away! Say that's it when youre done.");
+	        	  }
+	        	  else if(started && result.equals("goodbye")) {
+	        		  started=false;
+	        		  playString("See you later "+user_name);
+	        	  }
+	        	  else if(started && (result.equals("I'm headed to bed") || result.equals("I'm going to bed"))) {
+	        		  SimpleDateFormat sdf = new SimpleDateFormat("HH");
+	      	        String hourstring = sdf.format(cal.getTime());
+	      	        	int hour = Integer.parseInt(hourstring) + 8;
+	      	        	String formattedtime;
+	      	        	if(hour>12) {
+	      	        		hour = hour-12;
+	      	        		formattedtime = hour+":00 PM";
+	      	        	}
+	      	        	else {
+	      	        		formattedtime = hour+":00 AM";
+	      	        	}
+	        		  playString("Alright! I'll set an alarm for " +formattedtime+". Sound good?");
+	        		  bedtime = true;
 	        	  }
 	        	  responses.add(response);
 	          }
@@ -180,15 +277,15 @@ public class Chatbot {
 		      // Build the voice request, select the language code ("en-US") and the ssml voice gender
 		      // ("neutral")
 		      //japan voice
-		      VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
+		      /*VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
 		          .setLanguageCode("ja-JP")
 		          .setSsmlGender(SsmlVoiceGender.FEMALE).setName("ja-JP-Wavenet-A")
-		          .build();
+		          .build();*/
 		      //gb voice
-		      /*VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
+		      VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
 			          .setLanguageCode("en-GB")
 			          .setSsmlGender(SsmlVoiceGender.FEMALE).setName("en-GB-Wavenet-A")
-			          .build();*/
+			          .build();
 		      // Select the type of audio file you want returned
 		      AudioConfig audioConfig = AudioConfig.newBuilder()
 		          .setAudioEncoding(AudioEncoding.MP3)
