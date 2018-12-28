@@ -154,8 +154,8 @@ public class Chatbot {
 	        			  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy.MM.dd");  
 		        		  LocalDateTime now = LocalDateTime.now();
 		        		  File f = new File(dtf.format(now)+".txt");
-	        			  PrintWriter pw = new PrintWriter(f);
-	        			  pw.write(log);
+	        			  PrintWriter pw = new PrintWriter(new FileOutputStream(f,true));
+	        			  pw.write(log+"\n");
 	        			  log = "";
 	        			  pw.close();
 	        			  logging = false;
