@@ -18,6 +18,8 @@ import com.google.protobuf.ByteString;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,11 +33,19 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.DataLine.Info;
 import javax.sound.sampled.TargetDataLine;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import static javax.sound.sampled.AudioSystem.getAudioInputStream;
 import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
 /**
@@ -44,10 +54,19 @@ import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
  * @version 12/27/2018
  */
 public class Chatbot {
+	//Customizable variables
 	//Name the bot will recognize to activate
 	static String bot_name = "Kara";
 	//Name of the user
 	static String user_name = "Todd";
+	//Current city
+	static String city = "leesburg";
+	//Current country code
+	static String country_code = "840";
+	
+	
+	
+	//Variables used by program
 	static boolean started = false;
 	static String log = "";
 	static String date= "";
@@ -105,13 +124,15 @@ public class Chatbot {
 	      	        	}
 	        		  //playString("Hello "+user_name+", how are you this morning!");
 	      	        	if (firstStartup) {
+	      	        		playString("Good "+greeting+" "+user_name+"!");
 	      	        		//TODO weather
+	      	        		getWeather();
 	      	        		//TODO news debrief?
 	      	        		//TODO get calendar
-	      	        		playString("Good "+greeting+" "+user_name+"! What do you need?");
+	      	        		playString("Anything else I can do for you?");
 	      	        	}
 	      	        	else {
-	      	        		playString("Good "+greeting+" "+user_name+"! What do you need?");
+	      	        		playString("Good "+greeting+" "+user_name+"! What can I do for you?");
 	      	        	}
 	        		  started =true;
 	        	  }
@@ -263,6 +284,52 @@ public class Chatbot {
 	    System.out.println(e);
 	  }
 	  responseObserver.onComplete();
+	}
+	
+	public static void getWeather() {
+		try {
+  			URL url = new URL("http://api.openweathermap.org/data/2.5/weather?q="+city+","+country_code+"&appid=f64957722661272de76a751839f0e552");
+  			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+  			conn.setRequestMethod("GET");
+  			conn.connect();
+  			int responsecode = conn.getResponseCode();
+  			if(responsecode != 200)
+  				throw new RuntimeException("HttpResponseCode: " +responsecode);
+  			else
+  			{
+  				 BufferedReader in = new BufferedReader(
+  			             new InputStreamReader(conn.getInputStream()));
+  			     String inputLine;
+  			     StringBuffer weatherresponse = new StringBuffer();
+  			     while ((inputLine = in.readLine()) != null) {
+  			     	weatherresponse.append(inputLine);
+  			     }
+  			     in.close();
+  			     JSONObject myResponse = new JSONObject(weatherresponse.toString());
+  			     String weather="";
+  			     JSONArray weatherarray = myResponse.getJSONArray("weather");
+  			     for(int x=0;x<weatherarray.length();x++) {
+  			    	 JSONObject thisweather = weatherarray.getJSONObject(x);
+  			    	 String mainweather = thisweather.getString("main");
+  			    	 if (weather.length()>0) {
+  			    		 weather += " and "+mainweather;
+  			    	 }
+  			    	 else {
+  			    		 weather+=mainweather;
+  			    	 }
+  			     }
+  			     JSONObject main = myResponse.getJSONObject("main");
+  			     String temp="";
+  			     double faren = main.getDouble("temp");
+  			     faren = ((9/5)*(faren - 273)) + 32;
+  			     faren = Math.round(faren * 100.0) / 100.0;
+  			     temp = ""+faren;
+  			   playString("It looks like there's going to be "+weather+" today with a temperature of "+temp+" degrees.");
+  			}
+  		}catch(Exception e) {
+  			e.printStackTrace();
+  			playString("Could not get weather data.");
+  		}
 	}
 	
 	public static void playString(String s) {
