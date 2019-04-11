@@ -25,7 +25,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -42,6 +45,7 @@ import java.io.InputStreamReader;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.JFrame;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,18 +58,7 @@ import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
  * @version 12/27/2018
  */
 public class Chatbot {
-	//Customizable variables
-	//Name the bot will recognize to activate
-	static String bot_name = "Kara";
-	//Name of the user
-	static String user_name = "Todd";
-	//Current city
-	static String city = "leesburg";
-	//Current country code
-	static String country_code = "840";
-	
-	
-	
+
 	//Variables used by program
 	static boolean started = false;
 	static String log = "";
@@ -75,8 +68,15 @@ public class Chatbot {
 	static Calendar cal = Calendar.getInstance();
 	static boolean bedtime = false;
 	static boolean logging = false;
+	static HashMap<String,String> news = new HashMap<String,String>();
+	static String[] newsTitles=null;
+	static int newsPointer =-1;
 	public static void main(String [] args) {
 		try {
+			/*JFrame frame = new JFrame("FrameDemo");
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.pack();
+			frame.setVisible(true);*/
 			//playString("Hello "+user_name+", how are you this morning!");
 			streamingMicRecognize();
 		} catch (Exception e) {
@@ -89,7 +89,7 @@ public class Chatbot {
 
 	  ResponseObserver<StreamingRecognizeResponse> responseObserver = null;
 	  try (SpeechClient client = SpeechClient.create()) {
-
+		  
 	    responseObserver =
 	        new ResponseObserver<StreamingRecognizeResponse>() {
 	          ArrayList<StreamingRecognizeResponse> responses = new ArrayList<>();
@@ -101,7 +101,7 @@ public class Chatbot {
 	          public void onResponse(StreamingRecognizeResponse response) {
 	        	  String result = response.getResults(0).getAlternatives(0).getTranscript().trim();
 	        	  System.out.println(result);
-	        	  if(result.equals("hey "+bot_name) || result.equals("hello")) {
+	        	  if(result.equals("hey "+Settings.bot_name) || result.equals("hello")) {
 	        		  DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy.MM.dd");  
 	        		  LocalDateTime now = LocalDateTime.now();
 	        		  date = dtf.format(now);
@@ -124,7 +124,7 @@ public class Chatbot {
 	      	        	}
 	        		  //playString("Hello "+user_name+", how are you this morning!");
 	      	        	if (firstStartup) {
-	      	        		playString("Good "+greeting+" "+user_name+"!");
+	      	        		playString("Good "+greeting+" "+Settings.user_name+"!");
 	      	        		//TODO weather
 	      	        		getWeather();
 	      	        		//TODO news debrief?
@@ -132,18 +132,46 @@ public class Chatbot {
 	      	        		playString("Anything else I can do for you?");
 	      	        	}
 	      	        	else {
-	      	        		playString("Good "+greeting+" "+user_name+"! What can I do for you?");
+	      	        		playString("Good "+greeting+" "+Settings.user_name+"! What can I do for you?");
 	      	        	}
 	        		  started =true;
 	        	  }
+	        	  else if(started && result.contains("news")) {
+	        		  playString("Wait one second, pulling all of your news.");
+	        		  news = NewsScrape.getNews();
+	        		  if(news!=null) {
+		        		  newsTitles = news.keySet().toArray(new String[news.size()]);
+		        		  newsPointer = 0;
+		        		  playString("Okay, Here is your news.");
+		        		  playString(newsTitles[newsPointer]);
+	        		  }
+	        		  else {
+	        			  playString("Could not get your news. You may need to set your credentials or download the chrome driver.");
+	        		  }
+	        	  }
+	        	  else if(started && newsPointer !=-1 && result.equals("select")) {
+	        		  //TODO go to article and get <p> tags
+	        		  String article = news.get(newsTitles[newsPointer]);
+	        		  System.out.println(article);
+	        		  String content = NewsScrape.getArticle(article);
+	        		  /*if(content.length()>400) {
+	        			  content = content.substring(0,400);
+	        		  }*/
+	        		  System.out.println("content:"+content);
+	        		  playString(content);
+	        	  }
+	        	  else if(started && result.equals("next") && newsPointer != -1 && newsTitles!=null && newsPointer<newsTitles.length) {
+	        		  newsPointer++;
+	        		  playString(newsTitles[newsPointer]);
+	        	  }
 	        	  else if(bedtime && (result.equals("yes") || result.equals("yep") || result.equals("yup"))) {
 	        		  //TODO set an alarm
-	        		  playString("Great! Good night "+user_name+"!");
+	        		  playString("Great! Good night "+Settings.user_name+"!");
 	        		  started=false;
 	        		  bedtime=false;
 	        	  }
 	        	  else if(bedtime && (result.equals("no") || result.equals("nope"))) {
-	        		  playString("Ah sleeping in I see. Well good night "+user_name+"!");
+	        		  playString("Ah sleeping in I see. Well good night "+Settings.user_name+"!");
 	        		  started=false;
 	        		  bedtime=false;
 	        	  }
@@ -192,7 +220,7 @@ public class Chatbot {
 	        	  }
 	        	  else if(started && result.equals("goodbye")) {
 	        		  started=false;
-	        		  playString("See you later "+user_name);
+	        		  playString("See you later "+Settings.user_name);
 	        	  }
 	        	  else if(started && (result.equals("I'm headed to bed") || result.equals("I'm going to bed"))) {
 	        		  SimpleDateFormat sdf = new SimpleDateFormat("HH");
@@ -288,7 +316,7 @@ public class Chatbot {
 	
 	public static void getWeather() {
 		try {
-  			URL url = new URL("http://api.openweathermap.org/data/2.5/weather?q="+city+","+country_code+"&appid=f64957722661272de76a751839f0e552");
+  			URL url = new URL("http://api.openweathermap.org/data/2.5/weather?q="+Settings.city+","+Settings.country_code+"&appid=f64957722661272de76a751839f0e552");
   			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
   			conn.setRequestMethod("GET");
   			conn.connect();

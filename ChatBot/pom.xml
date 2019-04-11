@@ -33,6 +33,11 @@
     <version>0.8.1</version>
 </dependency>
 <dependency>
+	<groupId>com.google.guava</groupId>
+	<artifactId>guava</artifactId>
+	<version>23.0</version>
+</dependency>
+<dependency>
   <groupId>com.googlecode.soundlibs</groupId>
   <artifactId>tritonus-share</artifactId>
   <version>0.3.7-2</version>
@@ -61,6 +66,21 @@
    	<groupId>org.json</groupId>
    	<artifactId>json</artifactId>
    	<version>20180813</version>
+   </dependency>
+   <dependency>
+   	<groupId>org.jsoup</groupId>
+   	<artifactId>jsoup</artifactId>
+   	<version>1.11.3</version>
+   </dependency>
+   <dependency>
+   	<groupId>org.seleniumhq.selenium</groupId>
+   	<artifactId>selenium-java</artifactId>
+   	<version>3.141.59</version>
+   </dependency>
+   <dependency>
+   	<groupId>org.seleniumhq.selenium</groupId>
+   	<artifactId>selenium-chrome-driver</artifactId>
+   	<version>3.141.59</version>
    </dependency>
   </dependencies>
 </project>
