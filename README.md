@@ -3,11 +3,11 @@
 A personal assistant similar to Amazon Alexa, but I am slowly adding features that I wish were in other assistants.
 
 In order to use the news feature you must create the file Credentials.java with the following code:
-``public class Credentials {
+```public class Credentials {
 	public static final String GOOGLE_EMAIL = "INSERT_EMAIL_HERE";
 	public static final String GOOGLE_PASSWORD = "INSERT_PASSWORD_HERE";
 }
-``
+```
 
 You will also need to download the chrome driver from http://chromedriver.chromium.org/ and edit the path in the settings class (WILL CHANGE THIS IN THE FUTURE)
 
