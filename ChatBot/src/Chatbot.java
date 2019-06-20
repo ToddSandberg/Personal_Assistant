@@ -139,7 +139,7 @@ public class Chatbot {
 			StreamingRecognizeRequest request = StreamingRecognizeRequest.newBuilder()
 					.setStreamingConfig(streamingRecognitionConfig).build(); // The first request in a streaming call
 																				// has to be a config
-
+			 clientStream.send(request);
 			//clientStream.send(request);
 			// SampleRate:16000Hz, SampleSizeInBits: 16, Number of channels: 1, Signed:
 			// true,
@@ -162,6 +162,7 @@ public class Chatbot {
 			// Audio Input Stream
 			AudioInputStream audio = new AudioInputStream(targetDataLine);
 			while (true) {
+				try {
 				long estimatedTime = System.currentTimeMillis() - startTime;
 				byte[] data = new byte[6400];
 				audio.read(data);
@@ -170,7 +171,7 @@ public class Chatbot {
 				 * System.out.println("Stop speaking."); targetDataLine.stop();
 				 * targetDataLine.close(); break; }
 				 */
-				try {
+				
 					request = StreamingRecognizeRequest.newBuilder().setAudioContent(ByteString.copyFrom(data)).build();
 					clientStream.send(request);
 				}catch(Exception e) {
@@ -178,7 +179,7 @@ public class Chatbot {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 		responseObserver.onComplete();
 	}
