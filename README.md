@@ -26,6 +26,7 @@ Responds to hello with the users name and a greeting appropriate to the time of 
 - "news": Fetches a list of articles from https://news.google.com/foryou.
 - "next": Goes to next article in news list if a list has been fetched.
 - "select": plays article contents if it can fetch it.
+- "stop": stops the bot in the middle of whatever it is saying
 
 ## Goals:
 
