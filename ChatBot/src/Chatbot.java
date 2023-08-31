@@ -239,8 +239,12 @@ public class Chatbot {
 			/*
 			 * if(content.length()>400) { content = content.substring(0,400); }
 			 */
-			System.out.println("content:" + content);
-			playString(content);
+			if(content!=null) {
+				System.out.println("content:" + content);
+				playString(content);
+			} else {
+				playString("Sorry, I cant read that article.");
+			}
 		} else if (started && result.equals("next") && newsPointer != -1 && newsTitles != null
 				&& newsPointer < newsTitles.length) {
 			newsPointer++;
@@ -359,7 +363,6 @@ public class Chatbot {
 	}
 
 	public static boolean playString(String s) {
-		System.out.println("353");
 		if (apt.isAlive()) {
 			return false;
 		} else {
@@ -388,7 +391,6 @@ class AudioPlaybackThread extends Thread {
 	public void run() {
 		try {
 			// Set the text input to be synthesized;
-			System.out.println("384");
 			TextToSpeechClient textToSpeechClient = TextToSpeechClient.create();
 			SynthesisInput input = SynthesisInput.newBuilder().setText(sentence).build();
 
@@ -402,7 +404,6 @@ class AudioPlaybackThread extends Thread {
 			 * .setSsmlGender(SsmlVoiceGender.FEMALE).setName("ja-JP-Wavenet-A") .build();
 			 */
 			// gb voice
-			System.out.println("398");
 			VoiceSelectionParams voice = VoiceSelectionParams.newBuilder().setLanguageCode("en-GB")
 					.setSsmlGender(SsmlVoiceGender.FEMALE).setName("en-GB-Wavenet-A").build();
 			// Select the type of audio file you want returned
@@ -414,7 +415,6 @@ class AudioPlaybackThread extends Thread {
 			// Get the audio contents from the response
 			ByteString audioContents = response.getAudioContent();
 			// Write the response to the output file.
-			System.out.println("410");
 			try (OutputStream out = new FileOutputStream("output.mp3")) {
 				out.write(audioContents.toByteArray());
 				System.out.println("Audio content written to file \"output.mp3\"");
